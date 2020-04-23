@@ -75,3 +75,58 @@ Kfilter1(num = n, y = rtns2, A = A, Sigma0 = sigma0, mu0 = mu0, Phi = Phi,
 				 cQ = eta_sig, cR = chol(psi_sig), Ups = 0, Gam = Gam, input = ut)
 debug(Kfilter1)
 undebug(Kfilter1)
+
+# Build function for correlation matrix
+frac_func <- function(x = 1/2, n) {
+	if(n == 1) return(x)
+	prod(x + 1:(n-1))*x
+} 
+
+frac_func(1/2, 1)
+
+sum_term <- function(n, x = 1/2, pij) {
+	top <- factorial(n - 1)
+	bot <- n * frac_func(x, n)
+	side <- pij^(2*n)
+	return((top/bot) * side)
+}
+
+pij <- 0.8
+x <- .5
+
+eval_sum <- function(pij) {
+	delta <- 0.000001
+	sum <- list()
+		
+	# Add the first two partial sums
+	p1 <- sum_term(1, 1/2, pij)
+	p2 <- p1 + sum_term(2, 1/2, pij)
+	
+	sum <- append(sum, c(p1, p2))
+	
+	while(abs(sum[[length(sum)]] - sum[[length(sum)-1]]) >= delta) {
+		# compute new partial sum
+		n <- length(sum) + 1
+		p_sum <- sum[[n - 1]]
+		sum <- append(sum, sum_term(n, 1/2, pij) + p_sum)
+	}		
+	
+	return(2/pi^2 * sum[[length(sum)]])
+}
+
+
+
+# Build function which applies eval_sum to each element 
+cov_test <- diag(x = 1, nrow = 4)
+cov_test[2,3] <- .89
+cov_test[1, 4] <- .534
+cov_test[3, 4] <- 0.76
+
+cov_test[] <- vapply(cov_test, eval_sum, numeric(1))
+eval_sum(.534)
+
+get_correlation_matrix <- function(m) {
+	m[] <- vapply(m, eval_sum, numeric(1))
+	diag(m) <- 1
+	return(m)
+}
