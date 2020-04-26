@@ -114,7 +114,14 @@ eval_sum <- function(pij) {
 	return(2/pi^2 * sum[[length(sum)]])
 }
 
+inverse <- function(f, lower, upper){
+	function(y){
+		uniroot(function(x){f(x) - y}, lower = lower, upper = upper, tol=1e-3)[1]
+	}
+}
 
+inv_eval_sum <- inverse(eval_sum, 0,1)
+inv_eval_sum(0.2)
 
 # Build function which applies eval_sum to each element 
 cov_test <- diag(x = 1, nrow = 4)
